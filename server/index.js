@@ -19,6 +19,21 @@ const io = new Server(server, {
 //server is open for a connecton from here nd each socket gets a unique id called as socket id
 io.on("connection", (socket)=> {
     console.log(socket.id," : Socket ID")
+
+    socket.on('join-room',(data)=>{
+        socket.join(data)
+        console.log(data,"room data when joined")
+
+    })
+    socket.on('send-message', (data) => {
+        const { room, message } = data;
+        console.log(`Message received in room ${room}: ${message}`);
+        socket.to(room).emit("receive-message", message);
+    });
+
+    // socket.on('disconnect',()=>{
+    //     console.log(`user with ${socket.id} disconnected`)
+    // })
 })
 
 //server starts at the port serverPort
