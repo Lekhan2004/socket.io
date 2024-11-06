@@ -12,7 +12,7 @@ const serverPort = 1838
 const io = new Server(server, {
     cors:{
         methods:["GET", "POST"],
-        origin: "http://localhost:3000"
+        origin: ["http://localhost:5173","http://localhost:3000"]
     },
 });
 
