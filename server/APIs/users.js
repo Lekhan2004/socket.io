@@ -11,7 +11,7 @@ usersApp.use((req,res,next)=>{
 })
 
 //login api for user
-usersApp.get('/login',async(req,res)=>{
+usersApp.post('/login',async(req,res)=>{
     let userData = req.body;
     let loginData = await userscollection.findOne({username: userData.username});
     if(loginData === null){
