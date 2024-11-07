@@ -1,6 +1,8 @@
 // src/components/ChatRoom.jsx
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { logout } from '../redux/authSlice';
+import { useDispatch } from 'react-redux';
 
 function ChatRoom() {
   const [name, setName] = useState('');
@@ -9,6 +11,7 @@ function ChatRoom() {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  const dispatch = useDispatch();
   useEffect(() => {
     const newSocket = io("http://localhost:1838");
     setSocket(newSocket);
@@ -41,6 +44,10 @@ function ChatRoom() {
     }
   };
 
+  const handleLogout = () =>{
+    dispatch(logout());
+  }
+
   useEffect(() => {
     if (socket) {
       socket.on("receive-message", (data) => {
@@ -50,19 +57,55 @@ function ChatRoom() {
   }, [socket]);
 
   return (
-    <div>
-      {!isConnected ? (
-        <form onSubmit={handleSubmit}>
-          <input type="text" placeholder="Name" onChange={(e) => setName(e.target.value)} />
-          <input type="text" placeholder="Room" onChange={(e) => setRoom(e.target.value)} />
-          <button type="submit">Join Room</button>
-        </form>
-      ) : (
-        <form onSubmit={handleSend}>
-          <input type="text" placeholder="Message" value={message} onChange={(e) => setMessage(e.target.value)} />
-          <button type="submit">Send</button>
-        </form>
-      )}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Chat Room</h2>
+        {!isConnected ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Name" 
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input 
+              type="text" 
+              placeholder="Room" 
+              onChange={(e) => setRoom(e.target.value)}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"  
+            />
+            <button 
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 ease-in-out"
+            >
+              Join Room
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSend} className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Message" 
+              value={message} 
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button 
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 ease-in-out"
+            >
+              Send
+            </button>
+          </form>
+        )}
+        <button 
+          type='button' 
+          onClick={handleLogout}
+          className="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-200 ease-in-out"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
