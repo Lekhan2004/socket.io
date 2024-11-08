@@ -72,6 +72,17 @@ io.on("connection", (socket) => {
         socket.to(room).emit("receive-message", message);
     });
 
+    socket.on("create-individual-room",(uniqueRoom)=>{
+        socket.join(uniqueRoom);
+    })
+
+    socket.on("send-individual-message", (data) => {
+        const [user1, user2] = data.uniqueRoom.split('_');
+        const reversedRoom = `${user2}_${user1}`;
+        console.log(`${socket.id} joined room: ${data.uniqueRoom}`);
+        socket.to([data.uniqueRoom,reversedRoom]).emit("receive-individual-message", data.message);
+    });
+
     socket.on('disconnect', () => {
         console.log(`${socket.id} disconnected`);
     });

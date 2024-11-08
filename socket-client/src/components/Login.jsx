@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../redux/authSlice';
 import { login } from '../api/auth';
+import { setUser } from '../redux/userSlice';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -15,6 +16,7 @@ function Login() {
       console.log(token,"token")
       if(token !== null){
         dispatch(loginSuccess(token));
+        dispatch(setUser(username));
       }
       else{
         alert("wrong")
@@ -35,11 +37,11 @@ function Login() {
             onChange={(e) => setUsername(e.target.value)}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <input 
+          <input  
             type="password" 
             placeholder="Password" 
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-"
           />
           <button 
             type="submit"

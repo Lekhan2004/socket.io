@@ -61,4 +61,16 @@ usersApp.post('/register', async (req, res) => {
     }
 });
 
+usersApp.get('/allusers', async (req, res) => {
+    const currentUser = req.query.username; // Use req.query to get query parameters
+    console.log(currentUser, "curr");
+    const users = await userscollection.find().toArray();
+    const usersData = users
+      .filter(userObj => userObj.username !== currentUser)
+      .map(user => ({
+        username: user.username
+      }));
+    res.send({ usersData: usersData });
+  });
+
 module.exports = usersApp 
