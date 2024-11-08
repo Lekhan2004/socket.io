@@ -27,48 +27,61 @@ function Chat() {
     fetchUsers();
   }, [user.user]);
 
-  useEffect(()=>{
+  useEffect(() => {
     const newSocket = io("http://localhost:1838");
     setSocket(newSocket);
 
-    newSocket.on("connection", () => {
-      console.log("Connected to server with Socket ID:", newSocket.id);
-    });   
+    return () => {
+      if (newSocket) newSocket.disconnect();
+    };
+  }, []); // Only create socket once
 
-    newSocket.emit("create-individual-room",`${user.user}_${selectedUser}`)
-
-  },[selectedUser])
+  useEffect(() => {
+    if (socket && selectedUser) {
+      socket.emit("create-individual-room", `${user.user}_${selectedUser}`);
+    }
+  }, [socket, selectedUser, user.user]);
 
   const sendMessage = (event) => {
     event.preventDefault();
+    if (!socket || !selectedUser || !message.trim()) return;
+
     const reqBody = {
-        id: socket.id,
-        uniqueRoom : `${user.user}_${selectedUser}`,
-        message: message
-    }
-    // Add sent message to messages array
+      uniqueRoom: `${user.user}_${selectedUser}`,
+      message: message,
+      senderId: user.user
+    };
+
+    socket.emit("send-individual-message", reqBody);
+    
+    // Add sent message to messages array only once
     setMessages(prev => [...prev, {
       text: message,
       sender: user.user,
       timestamp: new Date().toISOString()
     }]);
-    socket.emit("send-individual-message",reqBody);
+
     setMessage(''); // Clear input after sending
-  }
+  };
 
   useEffect(() => {
     if (socket) {
       socket.on("receive-individual-message", (data) => {
-        console.log(data, "received ind message from socket");
-        // Add received message to messages array
-        setMessages(prev => [...prev, {
-          text: data,
-          sender: selectedUser,
-          timestamp: new Date().toISOString()
-        }]);
+        // Only add message if it's from the other user
+        if (data.senderId !== user.user) {
+          setMessages(prev => [...prev, {
+            text: data.message,
+            sender: data.senderId,
+            timestamp: new Date().toISOString()
+          }]);
+        }
       });
+
+      return () => {
+        socket.off("receive-individual-message");
+      };
     }
-  }, [socket, selectedUser]);
+  }, [socket, user.user]);
   
   return (
     <div className="flex h-screen">
@@ -140,7 +153,7 @@ function Chat() {
  
             {/* Message input */}
             <div className="p-4 border-t">
-              <div className="flex gap-2">
+              <form onSubmit={sendMessage} className="flex gap-2">
                 <input
                   type="text"
                   value={message}
@@ -149,12 +162,12 @@ function Chat() {
                   className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
-                  onClick={sendMessage}
+                  type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
                   Send
                 </button>
-              </div>
+              </form>
             </div>
           </>
         ) : (
@@ -164,7 +177,7 @@ function Chat() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default Chat
+export default Chat;

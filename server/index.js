@@ -29,9 +29,11 @@ mongoClient.connect(url)
     .then(client => {
         const chatdb = client.db('chatdb');
         const userscollection = chatdb.collection('userscollection');
+        const messagecollection = chatdb.collection('messagecollection');
         
         // Make the collection available in the app
         app.set('userscollection', userscollection);
+        app.set('messagecollection', messagecollection);
         console.log("Connected to MongoDB Atlas");
     })
     .catch(err => {
@@ -61,6 +63,8 @@ app.listen(expressPort, () => {
 io.on("connection", (socket) => {
     console.log(`${socket.id} connected`);
 
+    const messagecollection = app.get('messagecollection');
+
     socket.on('join-room', (room) => {
         socket.join(room);
         console.log(`${socket.id} joined room: ${room}`);
@@ -72,15 +76,36 @@ io.on("connection", (socket) => {
         socket.to(room).emit("receive-message", message);
     });
 
-    socket.on("create-individual-room",(uniqueRoom)=>{
+    // private chat 
+    socket.on("create-individual-room", (uniqueRoom) => {
         socket.join(uniqueRoom);
-    })
+        console.log(`${socket.id} joined individual room: ${uniqueRoom}`);
+    });
 
-    socket.on("send-individual-message", (data) => {
-        const [user1, user2] = data.uniqueRoom.split('_');
+    socket.on("send-individual-message", async (data) => {
+        const { uniqueRoom, message, senderId } = data;
+        const [user1, user2] = uniqueRoom.split('_');
         const reversedRoom = `${user2}_${user1}`;
-        console.log(`${socket.id} joined room: ${data.uniqueRoom}`);
-        socket.to([data.uniqueRoom,reversedRoom]).emit("receive-individual-message", data.message);
+
+        console.log(`${socket.id} sending message to room: ${uniqueRoom} and ${reversedRoom}`);
+
+        // Emit message to both room versions for private chat
+        io.to(uniqueRoom).emit("receive-individual-message", { uniqueRoom, message, senderId });
+        io.to(reversedRoom).emit("receive-individual-message", { uniqueRoom, message, senderId });
+
+        // Save individual message to database
+        try {
+            await messagecollection.insertOne({
+                message,
+                senderId,
+                room: uniqueRoom,
+                timestamp: new Date(),
+                type: "individual"
+            });
+            console.log("Individual message saved to database");
+        } catch (error) {
+            console.error("Error saving individual message to database:", error);
+        }
     });
 
     socket.on('disconnect', () => {
